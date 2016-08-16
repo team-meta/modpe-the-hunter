@@ -108,8 +108,9 @@ PlayerList.prototype = {
                     java.lang.Thread.sleep(3000);
                     clientMessage("§a::§e 최종 순위 §a::");
                     scoreArr = [];
-                    for each(let i in players) {
-                        scoreArr.push([i, i.score + i.huntHunter * 100 - i.huntedCnt * 500]);
+                    for (let i in players) {
+                        let player = players[i];
+                        scoreArr.push([player, player.score + player.huntHunter * 100 - player.huntedCnt * 500]);
                     }
                     scoreArr.sort((a, b) => b[1] - a[1]);
                     for (let i = 0, len = scoreArr.length; i < len; i++) {
@@ -153,8 +154,8 @@ PlayerList.prototype = {
     indicatePrey() {
         let players = this._players,
             hunter = this._hunter;
-        for each(let i in players) {
-            let entity = i.entity;
+        for (let i in players) {
+            let entity = players[i].entity;
             if (entity !== hunter) {
                 Entity.connectParticle(ParticleType.crit, entity, hunter, [0, 0, 0, 3]);
             }
@@ -162,12 +163,13 @@ PlayerList.prototype = {
     },
     init(players) {
         this._players = {};
-        for each(let i in players) {
-            if (Player.isPlayer(i)) {
-                this._players[Player.getName(i)] = {
-                    entity: i,
+        for (let i in players) {
+            let player = players[i];
+            if (Player.isPlayer(player)) {
+                this._players[Player.getName(player)] = {
+                    entity: player,
                     type: PlayerList.PREY,
-                    name: Player.getName(i),
+                    name: Player.getName(player),
                     score: 0,
                     huntHunter: 0,
                     huntedCnt: 0
@@ -199,9 +201,10 @@ PlayerList.prototype = {
     },
     scoreUp() {
         let players = this._players;
-        for each(let i in players) {
-            if (i.type === PlayerList.PREY) {
-                i.score += PlayerList.SCORE_UP;
+        for (let i in players) {
+            let player = players[i];
+            if (player.type === PlayerList.PREY) {
+                player.score += PlayerList.SCORE_UP;
             }
         }
     },
@@ -241,9 +244,10 @@ PlayerList.prototype = {
                             }
                         }
                         clientMessage("§eFever Time!");
-                        for each(let i in players) {
-                            Entity.addEffect(i, MobEffect.movementSpeed, 1200, 0, true, false);
-                            Entity.addEffect(i, MobEffect.jump, 1200, 0, true, false);
+                        for (let i in players) {
+                            let player = players[i];
+                            Entity.addEffect(player, MobEffect.movementSpeed, 1200, 0, true, false);
+                            Entity.addEffect(player, MobEffect.jump, 1200, 0, true, false);
                         }
                         for (let t = 60; t--;) {
                             java.lang.Thread.sleep(1000);
@@ -403,133 +407,136 @@ function init() {
 function showWindow() {
     CONTEXT.runOnUiThread({
         run() {
-            try{
-            let window = new me.astro.widget.Window(theme),
-                inputTime = new me.astro.widget.EditText(theme),
-                layout = new android.widget.LinearLayout(CONTEXT),
-                isRunning = playerList.isRunning();
-            if (user instanceof me.astro.security.Account) {
-                user.getRank("the_hunter_score", (code, rank_) => {
-                    if (code === me.astro.security.Account.GET_SUCCESS) {
-                        rank = rank_;
+            try {
+                let window = new me.astro.widget.Window(theme),
+                    inputTime = new me.astro.widget.EditText(theme),
+                    layout = new android.widget.LinearLayout(CONTEXT),
+                    isRunning = playerList.isRunning();
+                if (user instanceof me.astro.security.Account) {
+                    user.getRank("the_hunter_score", (code, rank_) => {
+                        if (code === me.astro.security.Account.GET_SUCCESS) {
+                            rank = rank_;
+                        }
+                    });
+                    for (let i = 0, len = rank.length; i < len; i++) {
+                        layout.addView(new me.astro.widget.TextView(theme)
+                            .setText((i + 1) + (i > 2 ? "th" : (i > 1 ? "rd" : (i === 1 ? "nd" : "st"))) + ". " + rank[i][0] + "\n" + rank[i][1])
+                            .show());
                     }
-                });
-                for (let i = 0, len = rank.length; i < len; i++) {
+                    layout.setOrientation(1);
+                } else {
                     layout.addView(new me.astro.widget.TextView(theme)
-                        .setText((i + 1) + (i > 2 ? "th" : (i > 1 ? "rd" : (i === 1 ? "nd" : "st"))) + ". " + rank[i][0] + "\n" + rank[i][1])
+                        .setText("로그인한 사용자만 이용가능합니다.")
                         .show());
                 }
-                layout.setOrientation(1);
-            } else {
-                layout.addView(new me.astro.widget.TextView(theme)
-                    .setText("로그인한 사용자만 이용가능합니다.")
-                    .show());
+                window.addLayout(me.astro.design.Bitmap.createBitmap(PATH + "ic_apps.png"), new me.astro.widget.Layout()
+                        .addView(new me.astro.widget.TextView(theme)
+                            .setPadding(DP * 8, DP * 16, DP * 8, DP * 4)
+                            .setText("The Hunter")
+                            .setTextSize(24)
+                            .show())
+                        .addView(isRunning ? new android.widget.TextView(CONTEXT) : new me.astro.widget.TextView(theme)
+                            .setPadding(DP * 12, 0, DP * 8, DP * 12)
+                            .setText("플레이 타임을 설정해 주세요.")
+                            .setTextSize(14)
+                            .show())
+                        .addView(isRunning ? new android.widget.TextView(CONTEXT) : inputTime.setHint("시간 (분)")
+                            .show())
+                        .addView(new me.astro.widget.Button(theme)
+                            .setEffect(() => {
+                                if (playerList.isRunning()) {
+                                    playerList.finish();
+                                } else {
+                                    playerList.init(Entity.getAll().filter(element => Player.isPlayer(element)));
+                                    playerList.setPlayTime(Number(inputTime.getText()) || 5);
+                                    playerList.start();
+                                }
+                                window.dismiss();
+                            })
+                            .setText(isRunning ? "Finish" : "Start")
+                            .show())
+                        .addView(new me.astro.widget.Button(theme)
+                            .setEffect(() => {
+                                window.dismiss();
+                            })
+                            .setText("Close")
+                            .show())
+                        .addView(new me.astro.widget.TextView(theme)
+                            .setPadding(DP * 12, 0, DP * 8, DP * 12)
+                            .setText("Copyright 2016 Team Meta. All rights reserved.")
+                            .setTextSize(12)
+                            .show())
+                        .show())
+                    .addLayout(me.astro.design.Bitmap.createBitmap(PATH + "ic_bulid.png"), new me.astro.widget.Layout()
+                        .addView(new me.astro.widget.TextView(theme)
+                            .setPadding(DP * 8, DP * 16, DP * 8, DP * 4)
+                            .setText("Utils")
+                            .setTextSize(24)
+                            .show())
+                        .addView(new me.astro.widget.TextView(theme)
+                            .setPadding(DP * 12, 0, DP * 8, DP * 12)
+                            .setText("게임 진행에 유용한 도구 모음입니다.")
+                            .setTextSize(14)
+                            .show())
+                        .addView(new me.astro.widget.Button(theme)
+                            .setEffect(() => {
+                                Level.setTime(0);
+                                window.dismiss();
+                                clientMessage("§e시간이 낮으로 변경되었습니다.");
+                            })
+                            .setText("Change the Day")
+                            .setWH(DP * 144, DP * 36)
+                            .show())
+                        .addView(new me.astro.widget.Button(theme)
+                            .setEffect(() => {
+                                let players = Entity.getAll().filter(function (element) {
+                                        return Player.isPlayer(element);
+                                    }),
+                                    x = Entity.getX(playerEntity),
+                                    y = Entity.getY(playerEntity),
+                                    z = Entity.getZ(playerEntity);
+                                for (let i = players.length; i--;) {
+                                    let cow = Level.spawnMob(x, y, z, 11);
+                                    Entity.rideAnimal(players[i], cow);
+                                    Entity.setHealth(cow, 0);
+                                }
+                                window.dismiss();
+                                clientMessage("§e관리자가 플레이어를 소집했습니다.");
+                            })
+                            .setText("TP All")
+                            .setWH(DP * 144, DP * 36)
+                            .show())
+                        .addView(new me.astro.widget.Button(theme)
+                            .setEffect(() => {
+                                window.dismiss();
+                            })
+                            .setText("Close")
+                            .show())
+                        .show())
+                    .addLayout(me.astro.design.Bitmap.createBitmap(PATH + "ic_sort.png"), new me.astro.widget.Layout()
+                        .addView(new me.astro.widget.TextView(theme)
+                            .setPadding(DP * 8, DP * 16, DP * 8, DP * 4)
+                            .setText("Deneb DB")
+                            .setTextSize(24)
+                            .show())
+                        .addView(new me.astro.widget.TextView(theme)
+                            .setPadding(DP * 12, 0, DP * 8, DP * 12)
+                            .setText("The Hunter 점수 랭킹시스템입니다.")
+                            .setTextSize(14)
+                            .show())
+                        .addView(layout)
+                        .addView(new me.astro.widget.Button(theme)
+                            .setEffect(() => {
+                                window.dismiss();
+                            })
+                            .setText("Close")
+                            .show())
+                        .show())
+                    .setFocusable(true)
+                    .show();
+            } catch (e) {
+                print(e);
             }
-            window.addLayout(me.astro.design.Bitmap.createBitmap(PATH + "ic_apps.png"), new me.astro.widget.Layout()
-                    .addView(new me.astro.widget.TextView(theme)
-                        .setPadding(DP * 8, DP * 16, DP * 8, DP * 4)
-                        .setText("The Hunter")
-                        .setTextSize(24)
-                        .show())
-                    .addView(isRunning ? new android.widget.TextView(CONTEXT) : new me.astro.widget.TextView(theme)
-                        .setPadding(DP * 12, 0, DP * 8, DP * 12)
-                        .setText("플레이 타임을 설정해 주세요.")
-                        .setTextSize(14)
-                        .show())
-                    .addView(isRunning ? new android.widget.TextView(CONTEXT) : inputTime.setHint("시간 (분)")
-                        .show())
-                    .addView(new me.astro.widget.Button(theme)
-                        .setEffect(() => {
-                            if (playerList.isRunning()) {
-                                playerList.finish();
-                            } else {
-                                playerList.init(Entity.getAll().filter(element => Player.isPlayer(element)));
-                                playerList.setPlayTime(Number(inputTime.getText()) || 5);
-                                playerList.start();
-                            }
-                            window.dismiss();
-                        })
-                        .setText(isRunning ? "Finish" : "Start")
-                        .show())
-                    .addView(new me.astro.widget.Button(theme)
-                        .setEffect(() => {
-                            window.dismiss();
-                        })
-                        .setText("Close")
-                        .show())
-                    .addView(new me.astro.widget.TextView(theme)
-                        .setPadding(DP * 12, 0, DP * 8, DP * 12)
-                        .setText("Copyright 2016 Team Meta. All rights reserved.")
-                        .setTextSize(12)
-                        .show())
-                    .show())
-                .addLayout(me.astro.design.Bitmap.createBitmap(PATH + "ic_bulid.png"), new me.astro.widget.Layout()
-                    .addView(new me.astro.widget.TextView(theme)
-                        .setPadding(DP * 8, DP * 16, DP * 8, DP * 4)
-                        .setText("Utils")
-                        .setTextSize(24)
-                        .show())
-                    .addView(new me.astro.widget.TextView(theme)
-                        .setPadding(DP * 12, 0, DP * 8, DP * 12)
-                        .setText("게임 진행에 유용한 도구 모음입니다.")
-                        .setTextSize(14)
-                        .show())
-                    .addView(new me.astro.widget.Button(theme)
-                        .setEffect(() => {
-                            Level.setTime(0);
-                            window.dismiss();
-                            clientMessage("§e시간이 낮으로 변경되었습니다.");
-                        })
-                        .setText("Change the Day")
-                        .setWH(DP * 144, DP * 36)
-                        .show())
-                    .addView(new me.astro.widget.Button(theme)
-                        .setEffect(() => {
-                            let players = Entity.getAll().filter(function (element) {
-                                    return Player.isPlayer(element);
-                                }),
-                                x = Entity.getX(playerEntity),
-                                y = Entity.getY(playerEntity),
-                                z = Entity.getZ(playerEntity);
-                            for (let i = players.length; i--;) {
-                                let cow = Level.spawnMob(x, y, z, 11);
-                                Entity.rideAnimal(players[i], cow);
-                                Entity.setHealth(cow, 0);
-                            }
-                            window.dismiss();
-                            clientMessage("§e관리자가 플레이어를 소집했습니다.");
-                        })
-                        .setText("TP All")
-                        .setWH(DP * 144, DP * 36)
-                        .show())
-                    .addView(new me.astro.widget.Button(theme)
-                        .setEffect(() => {
-                            window.dismiss();
-                        })
-                        .setText("Close")
-                        .show())
-                    .show())
-                .addLayout(me.astro.design.Bitmap.createBitmap(PATH + "ic_sort.png"), new me.astro.widget.Layout()
-                    .addView(new me.astro.widget.TextView(theme)
-                        .setPadding(DP * 8, DP * 16, DP * 8, DP * 4)
-                        .setText("Deneb DB")
-                        .setTextSize(24)
-                        .show())
-                    .addView(new me.astro.widget.TextView(theme)
-                        .setPadding(DP * 12, 0, DP * 8, DP * 12)
-                        .setText("The Hunter 점수 랭킹시스템입니다.")
-                        .setTextSize(14)
-                        .show())
-                    .addView(layout)
-                    .addView(new me.astro.widget.Button(theme)
-                        .setEffect(() => {
-                            window.dismiss();
-                        })
-                        .setText("Close")
-                        .show())
-                    .show())
-                .setFocusable(true)
-                .show();}catch(e){print(e)}
         }
     });
 }
