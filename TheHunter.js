@@ -1,4 +1,5 @@
-const NAME = "The Hunter",
+const Thread_ = java.lang.Thread,
+    NAME = "The Hunter",
     NAME_CODE = "the_hunter",
     VERSION = "1.0",
     DEVELOPER = "Astro",
@@ -11,6 +12,47 @@ let CONTEXT,
     icAppsBitmap,
     icBuildBitmap,
     icSortBitmap;
+
+
+
+function Timer(time) {
+    this._isRunning = false;
+    this._time = time || 30;
+}
+
+Timer.prototype.setOnStartListener = function (func) {
+    this._onStart = func;
+};
+
+Timer.prototype.setOnStopListener = function (func) {
+    this._onStop = func;
+};
+
+Timer.prototype.start = function () {
+    let thiz = this;
+    new Thread_({
+        run() {
+            if (typeof thiz._onStart === "function") {
+                thiz._onStart();
+            }
+            thiz._isRunning = true;
+            while (thiz._isRunning && thiz._time > 0) {
+                Thread_.sleep(1000);
+                thiz._time--;
+            }
+            if (typeof thiz._onStop === "function") {
+                thiz._onStop();
+            }
+            thiz._isRunning = false;
+        }
+    }).start();
+};
+
+Timer.prototype.stop = function () {
+    this._isRunning = false;
+};
+
+
 
 function gui() {
     CONTEXT.runOnUiThread({
@@ -97,7 +139,7 @@ function onLibraryLoaded(name, nameCode, version) {
                     .setEffect(gui)
                     .setEffectImage(me.astro.design.Bitmap.resizeBitmap(icAppsBitmap, DP * 24, DP * 24))
                     .setImage(me.astro.design.Bitmap.resizeBitmap(icAppsBitmap, DP * 24, DP * 24))
-                    .show())
+                    .show());
             }
         });
     }
