@@ -457,6 +457,10 @@ function gui() {
                                 .setText("게임 진행에 유용한 도구 모음입니다.")
                                 .setTextSize(14)
                                 .show())
+                            .addView(new me.astro.widget.TextView()
+                                .setText("Set the time to day")
+                                .setTextSize(14)
+                                .show())
                             .addView(new me.astro.widget.Button(theme)
                                 .setEffect(() => {
                                     Level.setTime(0);
@@ -465,6 +469,10 @@ function gui() {
                                 })
                                 .setText("Change the Day")
                                 .setWH(DP * 144, DP * 36)
+                                .show())
+                            .addView(new me.astro.widget.TextView()
+                                .setText("Tp all players to the admin")
+                                .setTextSize(14)
                                 .show())
                             .addView(new me.astro.widget.Button(theme)
                                 .setEffect(() => {
@@ -484,6 +492,52 @@ function gui() {
                                 })
                                 .setText("TP All")
                                 .setWH(DP * 144, DP * 36)
+                                .show())
+                            .addView(new me.astro.widget.TextView()
+                                .setText("Prevent block destruction")
+                                .setTextSize(14)
+                                .show())
+                            .addView(new me.astro.widget.Layout(theme)
+                                .addView(new me.astro.widget.Button(theme)
+                                    .setText("On")
+                                    .setEffect(() => {
+                                        R_Server.protectBlock(true);
+                                        window.dismiss();
+                                        R_Server.sendChat("§e블록 파괴 방지가 설정되었습니다.", false);
+                                    })
+                                    .show())
+                                .addView(new me.astro.widget.Button(theme)
+                                    .setText("Off")
+                                    .setEffect(() => {
+                                        R_Server.protectBlock(false);
+                                        window.dismiss();
+                                        R_Server.sendChat("§e블록 파괴 방지가 해제되었습니다.", false);
+                                    })
+                                    .show())
+                                .setOrientation(0)
+                                .show())
+                            .addView(new me.astro.widget.TextView()
+                                .setText("Disable join to the server")
+                                .setTextSize(14)
+                                .show())
+                            .addView(new me.astro.widget.Layout(theme)
+                                .addView(new me.astro.widget.Button(theme)
+                                    .setText("On")
+                                    .setEffect(() => {
+                                        R_Server.enableJoin(false);
+                                        window.dismiss();
+                                        R_Server.sendChat("§e서버 접속 차단이 설정되었습니다.", false);
+                                    })
+                                    .show())
+                                .addView(new me.astro.widget.Button(theme)
+                                    .setText("Off")
+                                    .setEffect(() => {
+                                        R_Server.enableJoin(true);
+                                        window.dismiss();
+                                        R_Server.sendChat("§e서버 접속 차단이 해제되었습니다.", false);
+                                    })
+                                    .show())
+                                .setOrientation(0)
                                 .show())
                             .addView(new me.astro.widget.Button(theme)
                                 .setText("Close")
