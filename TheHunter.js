@@ -8,6 +8,7 @@ const Thread_ = java.lang.Thread,
 let CONTEXT,
     DP,
     PATH,
+    user,
     theme,
     icAppsBitmap,
     icBuildBitmap,
@@ -190,6 +191,7 @@ Game.prototype.setPlayers = function (players) {
 Game.prototype.setPlayTime = function (time) {
     if (!this._isRunning) {
         this._timer = new Timer(time);
+        this._playtime = Math.floor(time / 6) / 10;
     }
 };
 
@@ -198,7 +200,8 @@ Game.prototype.start = function () {
         if (this._timer instanceof Timer) {
             let thiz = this,
                 playerList = thiz._playerList,
-                timer = thiz._timer;
+                timer = thiz._timer,
+                playtime = thiz._playtime;
             if (playerList.getAllPlayers().length < 2) {
                 R_Server.sendChat("Error: 인원이 부족하여 게임을 시작할 수 없습니다.", false);
                 return;
@@ -299,6 +302,13 @@ Game.prototype.start = function () {
                             R_Server.sendChat("§a::§e 발표 종료 §a::", false);
                         }
                         thiz._isRunning = false;
+                        if (user instanceof me.astro.security.Account) {
+                            user.getDataFromServer("the_hunter___playtime", (code, value) => {
+                                if (code === me.astro.security.Account.GET_SUCCESS) {
+                                    user.modifyData("the_hunter___playtime", Number(value || 0) + playtime);
+                                }
+                            });
+                        }
                     }
                 }).start();
             });
@@ -331,6 +341,26 @@ Game.prototype.stop = function () {
 };
 
 
+
+function tpAll() {
+    let snowballs = [];
+    players = Server.getAllPlayers(),
+        x = Entity.getX(playerEntity),
+        y = Entity.getY(playerEntity),
+        z = Entity.getZ(playerEntity);
+    for (let i = players.length; i--;) {
+        let snowball = snowballs[i] = Level.spawnMob(x, y, z, 11);
+        Entity.rideAnimal(players[i], snowball);
+    }
+    new Thread_({
+        run() {
+            Thread_.sleep(100);
+            for (let i = snowballs.length; i--;) {
+                Entity.remove(snowballs[i]);
+            }
+        }
+    }).start()
+}
 
 function gui() {
     CONTEXT.runOnUiThread({
@@ -412,10 +442,52 @@ function gui() {
                         .setFocusable(true)
                         .show();
                 } else {
-                    let window = new me.astro.widget.Window(theme),
+                    let layout = new me.astro.widget.Layout(theme),
+                        window = new me.astro.widget.Window(theme),
                         inputTime = new me.astro.widget.EditText(theme),
                         isRunning = game.isRunning();
-
+                    layout.addView(new me.astro.widget.TextView(theme)
+                            .setPadding(DP * 8, DP * 16, DP * 8, DP * 4)
+                            .setText("Rank")
+                            .setTextSize(24)
+                            .show())
+                        .addView(new me.astro.widget.TextView(theme)
+                            .setPadding(DP * 12, 0, DP * 8, DP * 4)
+                            .setText("Playtime")
+                            .setTextSize(14)
+                            .show());
+                    if (user instanceof me.astro.security.Account) {
+                        user.getRank("the_hunter___playtime", (code, rank) => {
+                            if (code === me.astro.security.Account.GET_SUCCESS) {
+                                for (let i = 0, len = rank.length; i < len; i++) {
+                                    layout.addView(new me.astro.widget.TextView(theme)
+                                            .setPadding(DP * 8, DP * 16, DP * 8, DP * 4)
+                                            .setText((i + 1) + (i > 2 ? "th" : (i > 1 ? "rd" : (i === 1 ? "nd" : "st"))) + ". " + rank[i][0])
+                                            .setTextSize(18)
+                                            .show())
+                                        .addView(new me.astro.widget.TextView(theme)
+                                            .setText("     " + rank[i][1] + "분")
+                                            .show());
+                                }
+                            } else {
+                                layout.addView(new me.astro.widget.TextView(theme)
+                                        .setText("데이터를 불러오는데 실패했습니다.")
+                                        .show());
+                            }
+                            layout.addView(new me.astro.widget.Button(theme)
+                                .setText("Close")
+                                .setEffect(() => window.dismiss())
+                                .show());
+                        });
+                    } else {
+                        layout.addView(new me.astro.widget.TextView(theme)
+                                .setText("로그인한 사용자만 이용가능합니다.")
+                                .show())
+                            .addView(new me.astro.widget.Button(theme)
+                                .setText("Close")
+                                .setEffect(() => window.dismiss())
+                                .show());
+                    }
                     window.addLayout(icAppsBitmap, new me.astro.widget.Layout(theme)
                             .addView(new me.astro.widget.TextView()
                                 .setPadding(DP * 8, DP * 16, DP * 8, DP * 4)
@@ -476,17 +548,7 @@ function gui() {
                                 .show())
                             .addView(new me.astro.widget.Button(theme)
                                 .setEffect(() => {
-                                    let players = Entity.getAll().filter(element => {
-                                            return Player.isPlayer(element);
-                                        }),
-                                        x = Entity.getX(playerEntity),
-                                        y = Entity.getY(playerEntity),
-                                        z = Entity.getZ(playerEntity);
-                                    for (let i = players.length; i--;) {
-                                        let cow = Level.spawnMob(x, y, z, 11);
-                                        Entity.rideAnimal(players[i], cow);
-                                        Entity.setHealth(cow, 0);
-                                    }
+                                    tpAll();
                                     window.dismiss();
                                     R_Server.sendChat("§e관리자가 플레이어를 소집했습니다.", false);
                                 })
@@ -544,6 +606,7 @@ function gui() {
                                 .setEffect(() => window.dismiss())
                                 .show())
                             .show())
+                        .addLayout(icSortBitmap, layout.show())
                         .addLayout(me.astro.design.Bitmap.createBitmap(PATH + "ic_info_outline.png"), new me.astro.widget.Layout(theme)
                             .addView(new me.astro.widget.TextView()
                                 .setPadding(DP * 8, DP * 16, DP * 8, DP * 4)
@@ -603,6 +666,21 @@ function onLibraryLoaded(name, nameCode, version) {
             }
         });
     }
+}
+
+function onLoginListener(code) {
+    switch (code) {
+    case me.astro.security.Account.LOGIN_SUCCESS:
+        user = me.astro.getUser();
+        break;
+    case me.astro.security.Account.LOGOUT:
+        user = null;
+        break;
+    }
+}
+
+function useItem(x, y, z, itemid) {
+    
 }
 
 function leaveGame() {
