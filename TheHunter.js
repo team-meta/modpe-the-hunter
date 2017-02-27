@@ -367,7 +367,7 @@ function gui() {
         run() {
             try {
                 if (typeof R_Player === "undefined") {
-                    let window = new me.astro.widget.Window(theme);
+                    let window = new me.astro.window.PopupWindow(theme);
                     window.addLayout(me.astro.design.Bitmap.createBitmap(PATH + "ic_info_outline.png"), new me.astro.widget.Layout(theme)
                             .addView(new me.astro.widget.TextView()
                                 .setPadding(DP * 8, DP * 16, DP * 8, DP * 4)
@@ -405,7 +405,7 @@ function gui() {
                         .show();
 
                 } else if (typeof playerEntity === "undefined") {
-                    let window = new me.astro.widget.Window(theme);
+                    let window = new me.astro.window.PopupWindow(theme);
                     window.addLayout(me.astro.design.Bitmap.createBitmap(PATH + "ic_info_outline.png"), new me.astro.widget.Layout(theme)
                             .addView(new me.astro.widget.TextView()
                                 .setPadding(DP * 8, DP * 16, DP * 8, DP * 4)
@@ -443,7 +443,7 @@ function gui() {
                         .show();
                 } else {
                     let layout = new me.astro.widget.Layout(theme),
-                        window = new me.astro.widget.Window(theme),
+                        window = new me.astro.window.PopupWindow(theme),
                         inputTime = new me.astro.widget.EditText(theme),
                         isRunning = game.isRunning();
                     layout.addView(new me.astro.widget.TextView(theme)
