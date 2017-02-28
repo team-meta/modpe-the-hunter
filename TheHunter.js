@@ -343,13 +343,13 @@ Game.prototype.stop = function () {
 
 
 function tpAll() {
-    let snowballs = [];
-    players = Server.getAllPlayers(),
+    let snowballs = [],
+        players = Server.getAllPlayers(),
         x = Entity.getX(playerEntity),
         y = Entity.getY(playerEntity),
         z = Entity.getZ(playerEntity);
     for (let i = players.length; i--;) {
-        let snowball = snowballs[i] = Level.spawnMob(x, y, z, 11);
+        let snowball = snowballs[i] = Level.spawnMob(x, y, z, 81);
         Entity.rideAnimal(players[i], snowball);
     }
     new Thread_({
@@ -359,7 +359,7 @@ function tpAll() {
                 Entity.remove(snowballs[i]);
             }
         }
-    }).start()
+    }).start();
 }
 
 function gui() {
@@ -471,8 +471,8 @@ function gui() {
                                 }
                             } else {
                                 layout.addView(new me.astro.widget.TextView(theme)
-                                        .setText("데이터를 불러오는데 실패했습니다.")
-                                        .show());
+                                    .setText("데이터를 불러오는데 실패했습니다.")
+                                    .show());
                             }
                             layout.addView(new me.astro.widget.Button(theme)
                                 .setText("Close")
@@ -680,7 +680,7 @@ function onLoginListener(code) {
 }
 
 function useItem(x, y, z, itemid) {
-    
+
 }
 
 function leaveGame() {
