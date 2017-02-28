@@ -205,6 +205,15 @@ Game.prototype.isRunning = function () {
     return this._isRunning;
 };
 
+Game.prototype.killHunter = function (preyEntity, hunterEntity) {
+    let preyData = this._playerList.findByEntity(preyEntity),
+        hunterData = this._playerList.findByEntity(hunterEntity);
+    if (preyData !== null && preyData.getType() === PlayerData.PREY && hunterData !== null && hunterData.getType() === PlayerData.HUNTER) {
+        R_Server.sendChat("§a[" + Player.getName(preyEntity) + "]§e님이 술래를 처치하셨습니다.", false);
+        preyData.updateHuntingCount();
+    }
+};
+
 Game.prototype.setPlayers = function (players) {
     if (!this._isRunning) {
         this._playerList.setPlayers(players);
@@ -718,5 +727,11 @@ function newLevel() {
 function attackHook(attacker, victim) {
     if (game instanceof Game && game.isRunning() && Player.isPlayer(attacker) && Player.isPlayer(victim)) {
         game.huntPrey(attacker, victim);
+    }
+}
+
+function deathHook(murder, victim) {
+    if (game instanceof Game && game.isRunning() && Player.isPlayer(attacker) && Player.isPlayer(victim)) {
+        game.killHunter(murder, victim);
     }
 }
