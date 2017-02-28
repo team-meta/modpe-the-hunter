@@ -69,6 +69,14 @@ PlayerData.prototype.setType = function (type) {
     this._type = type;
 };
 
+PlayerData.prototype.updateHuntedCount = function () {
+    this._huntedCount++;
+};
+
+PlayerData.prototype.updateHuntingCount = function () {
+    this._huntingCount++;
+};
+
 
 
 function PlayerList() {
@@ -175,6 +183,21 @@ Game.prototype.forceStop = function () {
             this._isRunning = false;
             me.astro.widget.Toast.show("Error: 비정상적으로 게임이 종료되었습니다.", theme);
         }
+    }
+};
+
+Game.prototype.getPlayerList = function () {
+    return this._playerList;
+};
+
+Game.prototype.huntPrey = function (hunterEntity, preyEntity) {
+    let hunterData = this._playerList.findByEntity(hunterEntity),
+        preyData = this._playerList.findByEntity(preyEntity);
+    if (hunterData !== null && hunterData.getType() === PlayerData.HUNTER && preyData !== null && preyData.getType() === PlayerData.PREY) {
+        R_Server.sendChat("§e술래는 §a[" + Player.getName(hunterEntity) + "]§e님 입니다.", false);
+        hunterData.setType(PlayerData.PREY);
+        preyData.setType(PlayerData.HUNTER);
+        preyData.updateHuntedCount();
     }
 };
 
@@ -626,7 +649,6 @@ function gui() {
                                 .setText(LICENSE_TEXT)
                                 .setTextColor(me.astro.design.Color.GREY_DARK)
                                 .show())
-
                             .addView(new me.astro.widget.Button(theme)
                                 .setText("Close")
                                 .setEffect(() => window.dismiss())
@@ -691,4 +713,10 @@ function leaveGame() {
 
 function newLevel() {
     playerEntity = Player.getEntity();
+}
+
+function attackHook(attacker, victim) {
+    if (game instanceof Game && game.isRunning() && Player.isPlayer(attacker) && Player.isPlayer(victim)) {
+        game.huntPrey(attacker, victim);
+    }
 }
